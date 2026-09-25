@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barbaras Eili-Automaten Quiz</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+    h1 { font-size: 1.8em; margin-bottom: 20px; text-align: center; }
+    .quiz-container { background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 90%; max-width: 500px; text-align: center; }
+    .question { font-size: 1.2em; margin-bottom: 15px; }
+    .answer { display: block; width: 80%; margin: 10px auto; padding: 10px; background: #eee; border: none; border-radius: 10px; cursor: pointer; font-size: 1em; }
+    .answer:hover { background: #ddd; }
+    .hidden { display: none; }
+    .feedback { margin-top: 20px; font-weight: bold; font-size: 1.4em; }
+    .feedback.correct { color: green; }
+    .feedback.incorrect { color: red; }
+    .next-btn { margin-top: 20px; padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 10px; cursor: pointer; display: none; }
+    .egg { width: 60px; height: 80px; background: green; border-radius: 50% 50% 45% 45%; margin: 20px auto; animation: rotateEgg 6s linear forwards; }
+    @keyframes rotateEgg { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .ban-code { margin-top: 20px; }
+    .ban-code p { font-size: 1.2em; font-weight: bold; }
+    .ban-code input { padding: 8px; width: 60%; margin-right: 5px; }
+    .ban-code button { padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    #endScreen { display: none; margin-top: 20px; font-size: 1.4em; font-weight: bold; color: #4CAF50; }
+  </style>
+</head>
+<body>
+  <h1>Barbaras Eili-Automaten Quiz</h1>
+  <div class="quiz-container">
+    <div class="question" id="question">Frage wird geladen...</div>
+    <div id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn">Nächste Frage</button>
+    <div id="endScreen">Glückwunsch! Du hast das Quiz abgeschlossen.</div>
+    <div class="ban-code hidden" id="banCode">
+      <p></p>
+      <input type="password" id="unlockInput" placeholder="Freischalt-Code" /><br><br>
+      <button id="unlockBtn">Entsperren</button>
+      <div class="feedback" id="unlockFeedback"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
+  <script>
+    // ---- Verbindung zum Briefkasten ----
+    // Der Zugang darf nur senden und nur auf diesem einen Thema.
+    // Mehr als ein Ei ausloesen ist damit nicht moeglich.
+    const MQTT_URL  = "wss://86ae572d42284233bd7539337359eecd.s1.eu.hivemq.cloud:8884/mqtt";
+    const MQTT_USER = "seite";
+    const MQTT_PASS = "eili2026quiz";
+    const THEMA     = "eili/automat1/ausgabe";
+
+    let briefkasten = null;
+    try {
+      briefkasten = mqtt.connect(MQTT_URL, {
+        username: MQTT_USER,
+        password: MQTT_PASS,
+        clientId: "seite-" + Math.random().toString(16).slice(2, 10),
+        connectTimeout: 10000,
+        reconnectPeriod: 2000
+      });
+      briefkasten.on("connect", () => console.log("Briefkasten verbunden"));
+      briefkasten.on("error", (e) => console.log("Briefkasten-Fehler:", e && e.message));
+    } catch (e) {
+      console.log("Briefkasten nicht erreichbar:", e);
+    }
+
+    // Loest ein Ei aus. Klappt die Verbindung nicht, laeuft das Quiz trotzdem weiter.
+    function loeseEiAus() {
+      if (briefkasten && briefkasten.connected) {
+        briefkasten.publish(THEMA, JSON.stringify({ zeit: Date.now() }), { qos: 1 });
+        console.log("Ei ausgeloest");
+      } else {
+        console.log("Briefkasten nicht verbunden, kein Ei ausgeloest");
+      }
+    }
+
+    let remaining = [];
+    let askedCount = 0;
+    const maxAsks = 2;
+    const banCode = "8180";
+
+    const questionEl  = document.getElementById("question");
+    const answersEl   = document.getElementById("answers");
+    const feedbackEl  = document.getElementById("feedback");
+    const nextBtn     = document.getElementById("nextBtn");
+    const endScreen   = document.getElementById("endScreen");
+    const banCodeDiv  = document.getElementById("banCode");
+    const unlockInput = document.getElementById("unlockInput");
+    const unlockBtn   = document.getElementById("unlockBtn");
+    const unlockFb    = document.getElementById("unlockFeedback");
+
+    function shuffleAnswers(q) {
+      const opts = q.a.map((text, idx) => ({ text, idx }));
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      return opts;
+    }
+
+    function checkBan() {
+      const bt = localStorage.getItem("quizBan");
+      if (bt && Date.now() < parseInt(bt)) {
+        questionEl.textContent = "Du bist für 10 Minuten gesperrt.";
+        answersEl.innerHTML = "";
+        feedbackEl.textContent = "";
+        nextBtn.style.display = "none";
+        endScreen.style.display = "none";
+        banCodeDiv.classList.remove("hidden");
+        return true;
+      }
+      banCodeDiv.classList.add("hidden");
+      return false;
+    }
+
+    function loadQuestion() {
+      if (checkBan()) return;
+      if (askedCount >= maxAsks) {
+        endScreen.style.display   = "block";
+        questionEl.style.display  = "none";
+        answersEl.style.display   = "none";
+        feedbackEl.style.display  = "none";
+        nextBtn.style.display      = "none";
+        localStorage.setItem("quizBan", Date.now() + 10*60*1000);
+        return;
+      }
+      questionEl.style.display = "block";
+      answersEl.style.display  = "block";
+      feedbackEl.style.display = "block";
+      nextBtn.style.display     = "none";
+      endScreen.style.display   = "none";
+      feedbackEl.textContent    = "";
+
+      const idx = Math.floor(Math.random() * remaining.length);
+      const qObj = remaining.splice(idx, 1)[0];
+      askedCount++;
+      questionEl.textContent = qObj.q;
+      answersEl.innerHTML = "";
+
+      const opts = shuffleAnswers(qObj);
+      opts.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.classList.add("answer");
+        btn.textContent = opt.text;
+        btn.onclick = () => handleAnswer(opt.idx === qObj.correct, btn);
+        answersEl.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(isCorrect, selectedBtn) {
+      document.querySelectorAll(".egg").forEach(e => e.remove());
+      document.querySelectorAll(".answer").forEach(b => {
+        if (b !== selectedBtn) b.classList.add("hidden");
+        b.disabled = true;
+      });
+      if (isCorrect) {
+        feedbackEl.textContent = "Richtige Antwort!";
+        feedbackEl.className   = "feedback correct";
+
+        const egg = document.createElement("div");
+        egg.classList.add("egg");
+        answersEl.parentNode.insertBefore(egg, nextBtn);
+
+        loeseEiAus();
+
+        if (askedCount < maxAsks) {
+          setTimeout(() => {
+            egg.remove();
+            nextBtn.textContent   = "Nächste Frage";
+            nextBtn.disabled      = false;
+            nextBtn.style.display = "inline-block";
+          }, 6000);
+        } else {
+          setTimeout(loadQuestion, 6000);
+        }
+
+      } else {
+        feedbackEl.textContent = "Falsche Antwort.";
+        feedbackEl.className   = "feedback incorrect";
+
+        nextBtn.textContent   = "Versuche es erneut in 10 Minuten";
+        nextBtn.disabled      = false;
+        nextBtn.style.display = "inline-block";
+        localStorage.setItem("quizBan", Date.now() + 10*60*1000);
+      }
+    }
+
+    nextBtn.onclick = () => {
+      if (!nextBtn.textContent.includes("Versuche")) {
+        nextBtn.style.display = "none";
+        loadQuestion();
+      } else {
+        checkBan();
+      }
+    };
+
+    unlockBtn.onclick = () => {
+      if (unlockInput.value === banCode) {
+        localStorage.removeItem("quizBan");
+        location.reload();
+      } else {
+        unlockFb.textContent = "Falscher Code!";
+        unlockFb.className   = "feedback incorrect";
+      }
+    };
+
+    async function initQuiz() {
+      try {
+        const response = await fetch("https://gist.githubusercontent.com/barbara-ei/07394dd8905bf79e1a84bec3432d9a5c/raw/gistfile1.txt");
+        const data = await response.json();
+        
+        // Flexibel, falls du ein Array oder ein Objekt mit "questions" übergibst
+        remaining = Array.isArray(data) ? [...data] : (data.questions ? [...data.questions] : []);
+        
+        if (remaining.length > 0) {
+          loadQuestion();
+        } else {
+          questionEl.textContent = "Keine Fragen in der Datei gefunden.";
+        }
+      } catch (error) {
+        questionEl.textContent = "Fehler beim Laden der Fragen. Bitte Internetverbindung prüfen.";
+      }
+    }
+
+    initQuiz();
+  </script>
+</body>
+</html>
