@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#FFF8F0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16181A" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Eili-Automat">
+<meta name="theme-color" content="#FFF9F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15171A" media="(prefers-color-scheme: dark)">
 <title>Barbaras Eili-Automat</title>
 <style>
 :root{
@@ -33,10 +36,10 @@
   }
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html{background:var(--bg1);min-height:100%}
 body{
-  margin:0;
-  padding:max(20px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom));
+  margin:0;min-height:100dvh;
+  padding:max(24px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   color:var(--text);
   background:linear-gradient(170deg,var(--bg1),var(--bg2));
@@ -45,9 +48,11 @@ body{
 }
 .blasen{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
 .blasen i{position:absolute;display:block;border-radius:50%;filter:blur(46px);opacity:.5}
-.blasen i:nth-child(1){width:320px;height:320px;top:-90px;left:-70px;background:#FFD59E}
-.blasen i:nth-child(2){width:300px;height:300px;bottom:-110px;right:-80px;background:#A8DFC0}
-.blasen i:nth-child(3){width:240px;height:240px;top:38%;right:-120px;background:#D6C6F5}
+.blasen i:nth-child(1){width:300px;height:300px;top:14%;left:-32%;background:#FFD59E}
+.blasen i:nth-child(2){width:280px;height:280px;bottom:16%;right:-30%;background:#A8DFC0}
+.blasen i:nth-child(3){width:220px;height:220px;top:52%;left:-28%;background:#D6C6F5}
+.blasen{mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 84%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 84%,transparent 100%)}
 @media (prefers-color-scheme: dark){.blasen i{opacity:.18}}
 
 .karte{
