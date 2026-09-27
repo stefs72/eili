@@ -52,14 +52,16 @@ body{
   position:relative;
 }
 /* An der Seite haengen, nicht am Fenster. Sonst bleibt der Hintergrund
-   beim Scrollen stehen, waehrend die Karte darueber hinwegwandert. */
+   beim Scrollen stehen, waehrend die Karte darueber hinwegwandert.
+   Die Farbflecken sitzen in Pixeln vom Rand, nicht in Prozent, und ohne
+   Maske. So reicht der Schimmer auch auf einer kurzen Seite bis an beide
+   Enden und hoert nirgends sichtbar auf. Sie liegen weit genug draussen,
+   damit der Rand ruhig bleibt. */
 .blasen{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.blasen i{position:absolute;display:block;border-radius:50%;filter:blur(46px);opacity:.5}
-.blasen i:nth-child(1){width:300px;height:300px;top:14%;left:-32%;background:#FFD59E}
-.blasen i:nth-child(2){width:280px;height:280px;bottom:16%;right:-30%;background:#A8DFC0}
-.blasen i:nth-child(3){width:220px;height:220px;top:52%;left:-28%;background:#D6C6F5}
-.blasen{mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 84%,transparent 100%);
-  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 16%,#000 84%,transparent 100%)}
+.blasen i{position:absolute;display:block;border-radius:50%;filter:blur(58px);opacity:.5}
+.blasen i:nth-child(1){width:340px;height:340px;top:-70px;left:-170px;background:#FFD59E}
+.blasen i:nth-child(2){width:320px;height:320px;bottom:-80px;right:-160px;background:#A8DFC0}
+.blasen i:nth-child(3){width:280px;height:280px;top:46%;left:-150px;background:#D6C6F5}
 @media (prefers-color-scheme: dark){.blasen i{opacity:.18}}
 
 .karte{
