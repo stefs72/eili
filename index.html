@@ -383,24 +383,23 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
       eiZeigen();
       quittungErhalten = false;
       loeseEiAus();
+      // Ein einziger Zeitgeber. Erst wenn das Ei durch ist, wird geprueft, ob
+      // der Automat quittiert hat. Sonst blitzt die Warnung auf, waehrend die
+      // Quittung noch unterwegs ist.
       setTimeout(() => {
-        if (!quittungErhalten) {
-          feedbackEl.innerHTML =
-            '<div class="rueck schlecht">Der Automat hat nicht geantwortet.</div>';
-          buehneLeeren();
-        }
-      }, 4000);
-      if (askedCount < maxAsks) {
-        setTimeout(() => {
-          buehneLeeren();
-          feedbackEl.innerHTML = "";
+        buehneLeeren();
+        const stumm = !quittungErhalten;
+        feedbackEl.innerHTML = stumm
+          ? '<div class="rueck schlecht">Der Automat hat nicht geantwortet.</div>'
+          : "";
+        if (askedCount < maxAsks) {
           nextBtn.textContent = "Nächste Frage";
           nextBtn.className = "weiter";
           nextBtn.style.display = "block";
-        }, 6000);
-      } else {
-        setTimeout(loadQuestion, 6000);
-      }
+        } else {
+          setTimeout(loadQuestion, stumm ? 3500 : 0);
+        }
+      }, 6000);
     } else {
       feedbackEl.innerHTML = '<div class="rueck schlecht">Leider falsch.</div>';
       nextBtn.textContent = "Versuche es in 10 Minuten erneut";
