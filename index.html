@@ -43,29 +43,12 @@
    Dokument und Seite tragen dieselbe Farbe, damit keine Kante entsteht. */
 html{background:var(--bg1)}
 body{
-  /* Mindestens ein Bildschirm hoch, damit der farbige Hintergrund nie
-     vorzeitig endet. Deckelt nichts: bei mehr Inhalt waechst die Seite.
-     lvh statt dvh: das ist die Fensterhoehe mit eingeklappten Leisten,
-     also der groesste Fall. Mit dvh blieb auf dem iPhone unten ein
-     Streifen uebrig, der nicht mehr zur Seite gehoerte. */
-  margin:0;background:var(--bg1);min-height:100lvh;
+  margin:0;background:var(--bg1);
   padding:calc(env(safe-area-inset-top) + 30px) 18px calc(env(safe-area-inset-bottom) + 36px);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   color:var(--text);
   position:relative;
 }
-/* An der Seite haengen, nicht am Fenster. Sonst bleibt der Hintergrund
-   beim Scrollen stehen, waehrend die Karte darueber hinwegwandert.
-   Die Farbflecken sitzen in Pixeln vom Rand, nicht in Prozent, und ohne
-   Maske. So reicht der Schimmer auch auf einer kurzen Seite bis an beide
-   Enden und hoert nirgends sichtbar auf. Sie liegen weit genug draussen,
-   damit der Rand ruhig bleibt. */
-.blasen{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.blasen i{position:absolute;display:block;border-radius:50%;filter:blur(58px);opacity:.5}
-.blasen i:nth-child(1){width:340px;height:340px;top:-70px;left:-170px;background:#FFD59E}
-.blasen i:nth-child(2){width:320px;height:320px;bottom:-80px;right:-160px;background:#A8DFC0}
-.blasen i:nth-child(3){width:280px;height:280px;top:46%;left:-150px;background:#D6C6F5}
-@media (prefers-color-scheme: dark){.blasen i{opacity:.18}}
 
 .karte{
   position:relative;z-index:1;width:100%;max-width:440px;
@@ -182,8 +165,6 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
 </style>
 </head>
 <body>
-<div class="blasen" aria-hidden="true"><i></i><i></i><i></i></div>
-
 <main class="karte">
   <div class="kopf">
     <svg width="34" height="42" viewBox="0 0 26 32" aria-hidden="true">
