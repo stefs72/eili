@@ -43,9 +43,12 @@
    Dokument und Seite tragen dieselbe Farbe, damit keine Kante entsteht. */
 html{background:var(--bg1)}
 body{
-  /* Mindestens ein Bildschirm hoch, damit der farbige Schimmer nie
-     vorzeitig endet. Deckelt nichts: bei mehr Inhalt waechst die Seite. */
-  margin:0;background:var(--bg1);min-height:100dvh;
+  /* Mindestens ein Bildschirm hoch, damit der farbige Hintergrund nie
+     vorzeitig endet. Deckelt nichts: bei mehr Inhalt waechst die Seite.
+     lvh statt dvh: das ist die Fensterhoehe mit eingeklappten Leisten,
+     also der groesste Fall. Mit dvh blieb auf dem iPhone unten ein
+     Streifen uebrig, der nicht mehr zur Seite gehoerte. */
+  margin:0;background:var(--bg1);min-height:100lvh;
   padding:calc(env(safe-area-inset-top) + 30px) 18px calc(env(safe-area-inset-bottom) + 36px);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
   color:var(--text);
@@ -408,7 +411,10 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
       // Quittung noch unterwegs ist.
       setTimeout(() => {
         buehneLeeren();
-        const stumm = !quittungErhalten;
+        // Nur warnen, wenn es wirklich etwas zu warnen gibt: keine Quittung
+        // UND der Automat meldet sich auch sonst nicht. Kommt die Quittung
+        // nur spaet, ist das Ei laengst da und die Warnung waere falsch.
+        const stumm = !quittungErhalten && !statusEl.classList.contains("bereit");
         feedbackEl.innerHTML = stumm
           ? '<div class="rueck schlecht">Der Automat hat nicht geantwortet.</div>'
           : "";
