@@ -143,7 +143,6 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
   font:inherit;font-size:1rem;font-weight:600;color:var(--text);
   background:var(--rand);cursor:pointer;
 }
-.fuss{margin-top:18px;text-align:center;font-size:.76rem;color:var(--leise);opacity:.8}
 .verborgen{display:none !important}
 @media (prefers-reduced-motion: reduce){
   *{animation:none !important;transition:none !important}
@@ -187,7 +186,6 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
     <div id="unlockFeedback"></div>
   </div>
 
-  <div class="fuss">Viel Glück</div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
@@ -344,6 +342,7 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
       if (askedCount < maxAsks) {
         setTimeout(() => {
           buehneLeeren();
+          feedbackEl.innerHTML = "";
           nextBtn.textContent = "Nächste Frage";
           nextBtn.className = "weiter";
           nextBtn.style.display = "block";
