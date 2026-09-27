@@ -62,7 +62,19 @@ body{
 .kopf{display:flex;align-items:center;gap:11px;margin-bottom:4px}
 .kopf svg{flex:none}
 h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height:1.25}
-.unter{margin:6px 0 18px;font-size:.9rem;color:var(--leise);line-height:1.5}
+.unter{margin:6px 0 12px;font-size:.9rem;color:var(--leise);line-height:1.5}
+.status{display:inline-flex;align-items:center;gap:8px;margin:0 0 18px;
+  padding:6px 12px;border-radius:99px;font-size:.79rem;font-weight:500;
+  background:var(--rand);color:var(--leise);transition:background .35s,color .35s}
+.status i{width:8px;height:8px;border-radius:50%;background:#B9B7B0;flex:none;
+  transition:background .35s}
+.status.bereit{background:var(--gutbg);color:var(--gut)}
+.status.bereit i{background:var(--gut);animation:puls 2.4s infinite}
+.status.weg{background:var(--schlechtbg);color:var(--schlecht)}
+.status.weg i{background:var(--schlecht)}
+@keyframes puls{0%{box-shadow:0 0 0 0 rgba(47,139,75,.45)}
+  70%{box-shadow:0 0 0 7px rgba(47,139,75,0)}
+  100%{box-shadow:0 0 0 0 rgba(47,139,75,0)}}
 
 .punkte{display:flex;gap:6px;margin-bottom:20px}
 .punkte b{height:4px;flex:1;border-radius:99px;background:var(--rand);transition:background .45s ease}
@@ -163,6 +175,7 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
     <h1>Barbaras Eili&#8209;Automat</h1>
   </div>
   <p class="unter">Beantworte die Frage richtig, dann kommt ein Ei heraus.</p>
+  <div class="status" id="status"><i></i><span>Verbindung wird aufgebaut …</span></div>
 
   <div class="punkte" id="punkte" aria-hidden="true"><b></b><b></b></div>
 
@@ -196,6 +209,8 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
   const MQTT_USER = "seite";
   const MQTT_PASS = "eili2026quiz";
   const THEMA     = "eili/automat1/ausgabe";
+  const THEMA_ST  = "eili/automat1/status";
+  const THEMA_QU  = "eili/automat1/quittung";
 
   let briefkasten = null;
   try {
@@ -204,9 +219,37 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
       clientId: "seite-" + Math.random().toString(16).slice(2, 10),
       connectTimeout: 10000, reconnectPeriod: 2000
     });
-    briefkasten.on("connect", () => console.log("Briefkasten verbunden"));
-    briefkasten.on("error", (e) => console.log("Briefkasten-Fehler:", e && e.message));
-  } catch (e) { console.log("Briefkasten nicht erreichbar:", e); }
+    briefkasten.on("connect", () => {
+      console.log("Briefkasten verbunden");
+      briefkasten.subscribe([THEMA_ST, THEMA_QU], { qos: 1 });
+      statusSetzen("", "Automat wird gesucht …");
+    });
+    briefkasten.on("message", (thema, inhalt) => {
+      if (thema === THEMA_ST) {
+        let online = false;
+        try { online = !!JSON.parse(inhalt.toString()).online; } catch (e) {}
+        statusSetzen(online ? "bereit" : "weg",
+                     online ? "Automat bereit" : "Automat nicht erreichbar");
+      } else if (thema === THEMA_QU) {
+        quittungErhalten = true;
+      }
+    });
+    briefkasten.on("close", () => statusSetzen("weg", "Keine Verbindung"));
+    briefkasten.on("error", (e) => {
+      console.log("Briefkasten-Fehler:", e && e.message);
+      statusSetzen("weg", "Keine Verbindung");
+    });
+  } catch (e) {
+    console.log("Briefkasten nicht erreichbar:", e);
+  }
+
+  const statusEl = document.getElementById("status");
+  let quittungErhalten = false;
+
+  function statusSetzen(art, text) {
+    statusEl.className = "status" + (art ? " " + art : "");
+    statusEl.querySelector("span").textContent = text;
+  }
 
   function loeseEiAus() {
     if (briefkasten && briefkasten.connected) {
@@ -338,7 +381,15 @@ h1{margin:0;font-size:1.16rem;font-weight:650;letter-spacing:-.015em;line-height
     if (isCorrect) {
       feedbackEl.innerHTML = '<div class="rueck gut">Richtig! Dein Ei kommt.</div>';
       eiZeigen();
+      quittungErhalten = false;
       loeseEiAus();
+      setTimeout(() => {
+        if (!quittungErhalten) {
+          feedbackEl.innerHTML =
+            '<div class="rueck schlecht">Der Automat hat nicht geantwortet.</div>';
+          buehneLeeren();
+        }
+      }, 4000);
       if (askedCount < maxAsks) {
         setTimeout(() => {
           buehneLeeren();
