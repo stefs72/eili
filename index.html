@@ -214,6 +214,7 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
   const THEMA     = "eili/automat1/ausgabe";
   const THEMA_ST  = "eili/automat1/status";
   const THEMA_QU  = "eili/automat1/quittung";
+  const THEMA_FA  = "eili/automat1/falsch";
 
   let briefkasten = null;
   try {
@@ -260,6 +261,15 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
       console.log("Ei ausgeloest");
     } else {
       console.log("Briefkasten nicht verbunden, kein Ei ausgeloest");
+    }
+  }
+
+  // Meldet eine falsche Antwort. Der Automat spielt dann nur einen Ton und
+  // gibt kein Ei aus. Klappt die Meldung nicht, bleibt es eben still, am
+  // Spiel aendert das nichts.
+  function meldeFalsch() {
+    if (briefkasten && briefkasten.connected) {
+      briefkasten.publish(THEMA_FA, JSON.stringify({ zeit: Date.now() }), { qos: 1 });
     }
   }
 
@@ -409,6 +419,7 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
       }, 6000);
     } else {
       feedbackEl.innerHTML = '<div class="rueck schlecht">Leider falsch.</div>';
+      meldeFalsch();
       nextBtn.textContent = "Versuche es in 10 Minuten erneut";
       nextBtn.className = "weiter ruhig";
       nextBtn.style.display = "block";
