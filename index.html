@@ -215,6 +215,7 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
   const THEMA_ST  = "eili/automat1/status";
   const THEMA_QU  = "eili/automat1/quittung";
   const THEMA_FA  = "eili/automat1/falsch";
+  const THEMA_WA  = "eili/automat1/wach";
 
   let briefkasten = null;
   try {
@@ -227,6 +228,7 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
       console.log("Briefkasten verbunden");
       briefkasten.subscribe([THEMA_ST, THEMA_QU], { qos: 1 });
       statusSetzen("", "Automat wird gesucht …");
+      meldeWach();   // schon beim Scannen des QR-Codes geht das Licht an
     });
     briefkasten.on("message", (thema, inhalt) => {
       if (thema === THEMA_ST) {
@@ -267,6 +269,14 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
   // Meldet eine falsche Antwort. Der Automat spielt dann nur einen Ton und
   // gibt kein Ei aus. Klappt die Meldung nicht, bleibt es eben still, am
   // Spiel aendert das nichts.
+  // Weckt das Licht am Automaten. Mehr passiert nicht, und wenn die
+  // Meldung nicht durchkommt, bleibt es eben dunkel.
+  function meldeWach() {
+    if (briefkasten && briefkasten.connected) {
+      briefkasten.publish(THEMA_WA, JSON.stringify({ zeit: Date.now() }), { qos: 1 });
+    }
+  }
+
   function meldeFalsch() {
     if (briefkasten && briefkasten.connected) {
       briefkasten.publish(THEMA_FA, JSON.stringify({ zeit: Date.now() }), { qos: 1 });
@@ -374,6 +384,7 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
     punkteSetzen(askedCount);
     questionEl.textContent = qObj.q;
     answersEl.innerHTML = "";
+    meldeWach();
 
     shuffleAnswers(qObj).forEach((opt, i) => {
       const btn = document.createElement("button");
