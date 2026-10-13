@@ -271,9 +271,10 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
   // Spiel aendert das nichts.
   // Weckt das Licht am Automaten. Mehr passiert nicht, und wenn die
   // Meldung nicht durchkommt, bleibt es eben dunkel.
-  function meldeWach() {
+  function meldeWach(wach = true) {
     if (briefkasten && briefkasten.connected) {
-      briefkasten.publish(THEMA_WA, JSON.stringify({ zeit: Date.now() }), { qos: 1 });
+      briefkasten.publish(THEMA_WA, JSON.stringify({ wach: wach, zeit: Date.now() }),
+                          { qos: 1 });
     }
   }
 
@@ -363,6 +364,7 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
     if (checkBan()) return;
     if (askedCount >= maxAsks) {
       endScreen.style.display = "block";
+      meldeWach(false);        // Spiel vorbei, Licht darf schlafen gehen
       questionEl.style.display = "none";
       answersEl.style.display  = "none";
       feedbackEl.innerHTML = "";
@@ -431,6 +433,7 @@ h1{margin:0;font-size:1.62rem;font-weight:650;letter-spacing:-.02em;line-height:
     } else {
       feedbackEl.innerHTML = '<div class="rueck schlecht">Leider falsch.</div>';
       meldeFalsch();
+      meldeWach(false);        // nach einer falschen Antwort ist Schluss
       nextBtn.textContent = "Versuche es in 10 Minuten erneut";
       nextBtn.className = "weiter ruhig";
       nextBtn.style.display = "block";
